@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <title>Political Slop Debunker</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="app-header__brand">
+        <img src="icons/icon32.png" alt="" width="22" height="22" />
+        <h1 data-i18n="appTitle">Political Slop Debunker</h1>
+      </div>
+      <button
+        type="button"
+        id="settings-toggle"
+        class="icon-btn"
+        data-i18n-aria-label="settingsSummary"
+        aria-label="Pengaturan"
+        aria-expanded="false"
+      >
+        <span class="icon icon--settings" aria-hidden="true"></span>
+      </button>
+    </header>
+
+    <div id="settings-panel" class="settings-panel" hidden>
+      <div class="field">
+        <label for="provider" data-i18n="settingsProviderLabel">Penyedia API</label>
+        <select id="provider">
+          <option value="anthropic" data-i18n="settingsProviderAnthropic">
+            Anthropic (langsung)
+          </option>
+          <option value="aivene" data-i18n="settingsProviderAivene">Aivene (gateway)</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="api-key" data-i18n="settingsApiKeyLabel">Kunci API</label>
+        <div class="api-key-row">
+          <input id="api-key" type="password" autocomplete="off" spellcheck="false" />
+          <button
+            type="button"
+            id="toggle-key-visibility"
+            class="icon-btn icon-btn--field"
+            data-i18n-aria-label="settingsShowKey"
+            aria-label="Tampilkan"
+          >
+            <span class="icon icon--eye" aria-hidden="true"></span>
+          </button>
+        </div>
+        <p class="field-help" data-i18n="settingsApiKeyHelp">
+          Disimpan hanya di perangkat ini, tidak pernah disinkronkan.
+        </p>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label for="language" data-i18n="settingsLanguageLabel">Bahasa</label>
+          <select id="language">
+            <option value="id">Bahasa Indonesia</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="model" data-i18n="settingsModelLabel">Model verifikasi</label>
+          <select id="model">
+            <option value="claude-haiku-4-5" data-i18n="settingsModelHaiku">
+              Haiku 4.5 (tercepat, termurah)
+            </option>
+            <option value="claude-sonnet-4-6" data-i18n="settingsModelSonnet" selected>
+              Sonnet 4.6 (disarankan)
+            </option>
+            <option value="claude-sonnet-5" data-i18n="settingsModelSonnet5">
+              Sonnet 5
+            </option>
+            <option value="claude-opus-5" data-i18n="settingsModelOpus">
+              Opus 5 (paling teliti, paling mahal)
+            </option>
+            <option value="gemini-3.5-flash-lite" data-i18n="settingsModelGeminiFlashLite">
+              Gemini 3.5 Flash Lite (hanya via Aivene, termurah)
+            </option>
+            <option value="deepseek-v4-flash" data-i18n="settingsModelDeepseekFlash">
+              DeepSeek V4 Flash (hanya via Aivene, termurah)
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="detect-model" data-i18n="settingsDetectModelLabel">Model pemindaian</label>
+        <select id="detect-model">
+          <option value="haiku" data-i18n="settingsDetectModelHaiku" selected>
+            Haiku 4.5 (default)
+          </option>
+          <option value="deepseek-v4-flash" data-i18n="settingsDetectModelDeepseek">
+            DeepSeek V4 Flash (hanya via Aivene, lebih murah)
+          </option>
+        </select>
+        <p class="field-help" data-i18n="settingsDetectModelHelp">
+          Model yang memindai transkrip untuk menemukan klaim/pola — beda dari model verifikasi di atas.
+        </p>
+      </div>
+
+      <div class="field">
+        <label for="significance-threshold" data-i18n="settingsSignificanceLabel">Ambang signifikansi</label>
+        <select id="significance-threshold">
+          <option value="rendah" data-i18n="settingsSignificanceRendah">Rendah — tampilkan semua</option>
+          <option value="sedang" data-i18n="settingsSignificanceSedang" selected>Sedang (default)</option>
+          <option value="tinggi" data-i18n="settingsSignificanceTinggi">Tinggi — hanya yang penting</option>
+        </select>
+        <p class="field-help" data-i18n="settingsSignificanceHelp">
+          Klaim/pola di bawah ambang ini dilewati sebelum sempat diverifikasi — lebih hemat, tapi bisa melewatkan hal kecil.
+        </p>
+      </div>
+
+      <div class="field">
+        <label data-i18n="settingsChecksLabel">Fitur yang diaktifkan</label>
+        <div id="checks-list" class="checks-list"></div>
+      </div>
+
+      <div class="settings-actions">
+        <button type="button" id="save-settings" class="btn btn--primary" data-i18n="settingsSave">
+          Simpan
+        </button>
+        <span id="settings-saved" class="saved-hint" hidden></span>
+      </div>
+    </div>
+
+    <p id="status" class="status status--pending">
+      <span class="status__dot" aria-hidden="true"></span>
+      <span id="status-text">Memeriksa tab YouTube…</span>
+    </p>
+
+    <div id="context-section" class="context-section">
+      <button
+        type="button"
+        id="context-toggle"
+        class="section-toggle"
+        aria-expanded="false"
+        aria-controls="context-fields"
+      >
+        <span class="icon section-toggle__chevron" aria-hidden="true"></span>
+        <span class="section-toggle__label" data-i18n="contextTitle">Konteks</span>
+        <span id="context-badge" class="badge" data-i18n="contextBadgeAuto">terdeteksi otomatis</span>
+      </button>
+      <div id="context-fields" class="context-fields" hidden>
+        <p id="context-detected" class="context-detected"></p>
+        <div class="field">
+          <label for="manual-context" data-i18n="settingsManualContextLabel">Konteks tambahan (opsional)</label>
+          <input
+            id="manual-context"
+            type="text"
+            maxlength="300"
+            data-i18n-placeholder="settingsManualContextPlaceholder"
+            placeholder="mis. nama pembicara atau acara, jika deteksi otomatis kosong/salah"
+          />
+          <p class="field-help" data-i18n="settingsManualContextHelp">
+            Ditambahkan ke judul/channel/deskripsi yang terdeteksi otomatis dari halaman video, untuk membantu model memahami konteks klaim.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <main id="app-main">
+      <div class="controls">
+        <button type="button" id="clear-btn" class="btn btn--ghost" data-i18n="btnClear">
+          Bersihkan
+        </button>
+        <button type="button" id="export-btn" class="btn btn--ghost" data-i18n="btnExport">
+          Ekspor
+        </button>
+      </div>
+
+      <div id="stats-bar" class="stats-bar" hidden>
+        <div class="stat">
+          <span class="stat__value" id="stat-words">0</span>
+          <span class="stat__label" data-i18n="statWords">kata</span>
+        </div>
+        <div class="stat">
+          <span class="stat__value" id="stat-claims">0</span>
+          <span class="stat__label" data-i18n="statClaims">klaim</span>
+        </div>
+        <div class="stat stat--true">
+          <span class="stat__value" id="stat-true">0</span>
+          <span class="stat__label" data-i18n="statTrue">benar</span>
+        </div>
+        <div class="stat stat--false">
+          <span class="stat__value" id="stat-false">0</span>
+          <span class="stat__label" data-i18n="statFalse">salah</span>
+        </div>
+        <div class="stat stat--pattern" hidden>
+          <span class="stat__value" id="stat-patterns">0</span>
+          <span class="stat__label" data-i18n="statPatterns">pola</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        id="process-log-toggle"
+        class="process-log-toggle"
+        aria-expanded="false"
+        aria-controls="process-log"
+      >
+        <span class="icon process-log-toggle__chevron" aria-hidden="true"></span>
+        <span data-i18n="processLogToggle">Lihat proses pemindaian</span>
+      </button>
+      <div id="process-log" class="process-log" hidden>
+        <div id="process-log-list"></div>
+        <p id="process-log-empty" class="empty-state empty-state--compact" data-i18n="processLogEmpty">
+          Belum ada transkrip yang diproses.
+        </p>
+      </div>
+
+      <p id="results-scanning" class="scanning-indicator" hidden>
+        <span class="scanning-dot" aria-hidden="true"></span>
+        <span id="results-scanning-text"></span>
+      </p>
+
+      <div id="transcript-container" class="transcript-container">
+        <div id="transcript"></div>
+        <p id="transcript-empty" class="empty-state" data-i18n="transcriptEmpty">
+          Belum ada transkrip.
+        </p>
+      </div>
+    </main>
+
+    <div id="mark-tooltip" class="mark-tooltip" hidden>
+      <div class="mt-verdict"></div>
+      <div class="mt-summary"></div>
+      <div class="mt-footer" data-i18n="tooltipClickForDetail">Klik untuk detail</div>
+    </div>
+
+    <div id="detail-modal" class="modal" hidden>
+      <div class="modal__backdrop"></div>
+      <div class="modal__content">
+        <button type="button" id="modal-close" class="icon-btn modal__close" aria-label="Tutup">
+          <span class="icon" aria-hidden="true"></span>
+        </button>
+        <div id="modal-body"></div>
+      </div>
+    </div>
+
+    <footer class="disclaimer" data-i18n="disclaimer">
+      Pemeriksaan fakta otomatis tidak sempurna. Selalu periksa sumber yang
+      ditautkan.
+    </footer>
+
+    <script src="lib/i18n.js"></script>
+    <script src="lib/icons.js"></script>
+    <script src="lib/categories.js"></script>
+    <script src="lib/prompts.js"></script>
+    <script src="lib/pipeline.js"></script>
+    <script src="sidepanel.js"></script>
+  </body>
+</html>
